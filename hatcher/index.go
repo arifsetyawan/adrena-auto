@@ -46,7 +46,7 @@ func Auth() (token string, err error) {
 	}
 	var data ResponseAuth
 
-	values := map[string]string{"username": os.Getenv("USERNAME"), "password": os.Getenv("password")}
+	values := map[string]string{"username": os.Getenv("USERNAME"), "password": os.Getenv("PASSWORD")}
 	bodyJSON, _ := json.Marshal(values)
 	var payload = bytes.NewBuffer(bodyJSON)
 
@@ -125,6 +125,97 @@ func IsTodayWorkingOrNot(authToken string) bool {
 	return false
 }
 
-func getLocation(authToken string) ComponentPosition {
-	
+func GetLocation(authToken string) ComponentPosition {
+	var returnData ComponentPosition
+	var client = &http.Client{
+		Transport: &http.Transport{
+			TLSHandshakeTimeout: 5 * time.Second,
+		},
+	}
+	var data ResponseLocation
+
+	currentTime := time.Now()
+	today := currentTime.Format("2006-01-02")
+	lat := os.Getenv("LAT")
+	long := os.Getenv("LONG")
+	req, err := http.NewRequest("GET", baseURL+"/ess/api/attendance/position/v2?date="+today+"&lat="+lat+"&long="+long, nil)
+	if err != nil {
+		return returnData
+	}
+
+	req.Header.Set("User-Agent", "Adrena%20HR/1 CFNetwork/1325.0.1 Darwin/21.1.0")
+	req.Header.Set("Authorization", "Bearer "+authToken)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return returnData
+	}
+
+	if err := json.Unmarshal(body, &data); err != nil {
+		panic(err)
+	}
+
+	returnData = data.Position
+
+	return returnData
+}
+
+func Check(authToken string, activityType string, position ComponentPosition) bool {
+	var client = &http.Client{
+		Transport: &http.Transport{
+			TLSHandshakeTimeout: 5 * time.Second,
+		},
+	}
+
+	currentTime := time.Now()
+	today := currentTime.Format("2006-01-02")
+	lat := os.Getenv("LAT")
+	long := os.Getenv("LONG")
+
+	values := map[string]interface{}{
+		"activityType":  activityType,
+		"clockInMethod": "GEOLOC",
+		"deviceId":      -1,
+		"latitude":      lat,
+		"longitude":     long,
+		"locationName":  position.LocationName,
+		"provinceId":    position.ProvinceId,
+		"selectedDate":  today,
+	}
+	bodyJSON, _ := json.Marshal(values)
+	var payload = bytes.NewBuffer(bodyJSON)
+
+	req, err := http.NewRequest("POST", baseURL+"/ess/api/attendance", payload)
+	if err != nil {
+		return false
+	}
+
+	req.Header.Set("User-Agent", "Adrena%20HR/1 CFNetwork/1325.0.1 Darwin/21.1.0")
+	req.Header.Set("Authorization", "Bearer "+authToken)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	if body != nil {
+		fmt.Println(string(body))
+		return true
+	}
+
+	return false
 }
