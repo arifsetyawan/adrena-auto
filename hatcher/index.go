@@ -119,6 +119,7 @@ func IsTodayWorkingOrNot(authToken string) bool {
 		Find(func(each ComponentTimeTableStruct) bool {
 			return each.CalDate == today && each.IsWorkingDay == 1
 		}).Result()
+	fmt.Println(result)
 	if result != nil {
 		return true
 	}
@@ -169,11 +170,11 @@ func GetLocation(authToken string) ComponentPosition {
 }
 
 func Check(authToken string, activityType string, position ComponentPosition) bool {
-	//var client = &http.Client{
-	//	Transport: &http.Transport{
-	//		TLSHandshakeTimeout: 5 * time.Second,
-	//	},
-	//}
+	var client = &http.Client{
+		Transport: &http.Transport{
+			TLSHandshakeTimeout: 5 * time.Second,
+		},
+	}
 
 	currentTime := time.Now()
 	today := currentTime.Format("2006-01-02")
@@ -203,23 +204,24 @@ func Check(authToken string, activityType string, position ComponentPosition) bo
 
 	req.Header.Set("User-Agent", "Adrena%20HR/1 CFNetwork/1325.0.1 Darwin/21.1.0")
 	req.Header.Set("Authorization", "Bearer "+authToken)
+	req.Header.Add("Content-Type", "application/json")
 
-	//resp, err := client.Do(req)
-	//if err != nil {
-	//	log.Fatalln(err)
-	//}
-	//defer resp.Body.Close()
-	//
-	//body, err := ioutil.ReadAll(resp.Body)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return false
-	//}
-	//
-	//if body != nil {
-	//	fmt.Println(string(body))
-	//	return true
-	//}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+
+	if body != nil {
+		fmt.Println(string(body))
+		return true
+	}
 
 	return false
 }
