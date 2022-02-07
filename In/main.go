@@ -18,6 +18,10 @@ func main() {
 	}
 	position := hatcher.GetLocation(authToken)
 	fmt.Println(position)
-	hatcher.Check(authToken, "CHECKIN", position)
+	successCheckIN := hatcher.Check(authToken, "CHECKIN", position)
+	if successCheckIN == false {
+		fmt.Println("CHECKIN FAILED")
+		os.Exit(1)
+	}
 	fmt.Println("AUTO CHECKIN DONE ")
 }

@@ -18,6 +18,10 @@ func main() {
 	}
 	position := hatcher.GetLocation(authToken)
 	fmt.Println(position)
-	hatcher.Check(authToken, "CHECKOUT", position)
+	successCheckOut := hatcher.Check(authToken, "CHECKOUT", position)
+	if successCheckOut == false {
+		fmt.Println("CHECKOUT FAILED")
+		os.Exit(1)
+	}
 	fmt.Println("AUTO CHECKOUT DONE ")
 }
