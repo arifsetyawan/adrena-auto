@@ -1,0 +1,29 @@
+service: adrenago-out
+
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: go1.x
+  stage: dev
+  region: ap-southeast-3
+  profile: arif
+
+# you can define service wide environment variables here
+  environment:
+    AUTH_USERNAME: ${env:AUTH_USERNAME, ''}
+    AUTH_PASSWORD: ${env:AUTH_PASSWORD, ''}
+    LAT: ${env:LAT, ''}
+    LONG: ${env:LONG, ''}
+
+package:
+ exclude:
+   - ./**
+ include:
+   - bin/**
+
+functions:
+  checkOut:
+    handler: bin/linux/checkout
+    events:
+      - schedule: cron(20 10 * * ? *)

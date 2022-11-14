@@ -1,0 +1,27 @@
+service: adrenago-in
+
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: go1.x
+  stage: dev
+  region: ap-southeast-3
+  profile: arif
+  environment:
+    AUTH_USERNAME: ${env:AUTH_USERNAME, ''}
+    AUTH_PASSWORD: ${env:AUTH_PASSWORD, ''}
+    LAT: ${env:LAT, ''}
+    LONG: ${env:LONG, ''}
+
+package:
+ exclude:
+   - ./**
+ include:
+   - bin/**
+
+functions:
+  checkIn:
+    handler: bin/linux/checkin
+    events:
+      - schedule: cron(45 0 * * ? *)

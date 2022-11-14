@@ -1,4 +1,6 @@
 github.com/DefinitelyMod/gocsv v0.0.0-20181205141819-acfa5f112b45/go.mod h1:+nlrAh0au59iC1KN5RA1h1NdiOQYlNOBrbtE1Plqht4=
+github.com/aws/aws-lambda-go v1.34.1 h1:M3a/uFYBjii+tDcOJ0wL/WyFi2550FHoECdPf27zvOs=
+github.com/aws/aws-lambda-go v1.34.1/go.mod h1:jwFe2KmMsHmffA1X2R09hH6lFzJQxzI8qK17ewzbQMM=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/novalagung/gubrak/v2 v2.0.1 h1:OmabeSZsnf8Yd4FSZfm3F6VG2XoEsQBpktwtkjiCLdg=
 github.com/novalagung/gubrak/v2 v2.0.1/go.mod h1:zilliNLzP2RSdZ67Sz7NdqI4bg3j5zUTFR34tuXopA0=

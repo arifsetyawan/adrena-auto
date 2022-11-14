@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/novalagung/gubrak/v2"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,6 +11,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/novalagung/gubrak/v2"
 )
 
 var baseURL = "https://adrena.tech"
@@ -36,19 +37,19 @@ type ComponentPosition struct {
 }
 
 func NewBridge() BridgeInterface {
-	return Bridge{}
+	return &Bridge{}
 }
 
-func (b Bridge) Auth() {
+func (b *Bridge) Auth() {
 
 	var data ResponseAuth
 
-	if os.Getenv("USERNAME") == "" || os.Getenv("PASSWORD") == "" {
+	if os.Getenv("AUTH_USERNAME") == "" || os.Getenv("AUTH_PASSWORD") == "" {
 		fmt.Println("NO CREDENTIAL")
 		os.Exit(1)
 	}
 
-	values := map[string]string{"username": os.Getenv("USERNAME"), "password": os.Getenv("PASSWORD")}
+	values := map[string]string{"username": os.Getenv("AUTH_USERNAME"), "password": os.Getenv("AUTH_PASSWORD")}
 	bodyJSON, _ := json.Marshal(values)
 	var payload = bytes.NewBuffer(bodyJSON)
 
@@ -62,16 +63,29 @@ func (b Bridge) Auth() {
 		panic(err)
 	}
 
-	fmt.Println(data);
+	fmt.Println(string(body))
+	fmt.Println(data)
+	fmt.Println("TOKEN", data.Token.Access)
 
 	b.AuthToken = data.Token.Access
 }
 
-func (b Bridge) IsWorking() bool {
+func (b *Bridge) IsWorking() bool {
 	var data ResponseTimeTable
 
-	currentTime := time.Now()
+	// print location and local time
+	location, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	currentTime := time.Now().In(location)
 	today := currentTime.Format("2006-01-02")
+
+	fmt.Println("LOCATION: " + location.String())
+	fmt.Println("today: " + today)
+
+	fmt.Println(baseURL + "/ess/api/timetable/published/week?date=" + today)
 
 	body, errHttp := b.HttpWrap(HttpWrapParams{method: "GET", url: baseURL + "/ess/api/timetable/published/week?date=" + today, payload: nil, useAuth: true})
 	if errHttp != nil {
@@ -82,6 +96,8 @@ func (b Bridge) IsWorking() bool {
 	if err := json.Unmarshal(body, &data); err != nil {
 		panic(err)
 	}
+
+	fmt.Println(data)
 
 	result := gubrak.From(data.TimeTable).
 		Find(func(each ComponentTimeTableStruct) bool {
@@ -116,7 +132,7 @@ func (b Bridge) GetLocation() {
 	b.Position = data.Position
 }
 
-func (b Bridge) DoCheck(activityType string) bool {
+func (b *Bridge) DoCheck(activityType string) bool {
 
 	currentTime := time.Now()
 	today := currentTime.Format("2006-01-02")
@@ -125,10 +141,12 @@ func (b Bridge) DoCheck(activityType string) bool {
 
 	b.Auth()
 
-	if b.IsWorking() == false {
+	if !b.IsWorking() {
 		fmt.Println("NOT WORKING DAY")
 		os.Exit(1)
 	}
+
+	fmt.Println("WORKING DAY")
 
 	b.GetLocation()
 
@@ -168,7 +186,7 @@ type HttpWrapParams struct {
 	useAuth bool
 }
 
-func (b Bridge) HttpWrap(params HttpWrapParams) ([]byte, error) {
+func (b *Bridge) HttpWrap(params HttpWrapParams) ([]byte, error) {
 	var client = &http.Client{
 		Transport: &http.Transport{
 			TLSHandshakeTimeout: 5 * time.Second,
@@ -186,7 +204,8 @@ func (b Bridge) HttpWrap(params HttpWrapParams) ([]byte, error) {
 		req.Header.Add("Content-Type", "application/json")
 	}
 
-	if params.useAuth == true {
+	if params.useAuth {
+		fmt.Println("AUTH_TOKEN", b.AuthToken)
 		req.Header.Set("Authorization", "Bearer "+b.AuthToken)
 	}
 
@@ -201,15 +220,20 @@ func (b Bridge) HttpWrap(params HttpWrapParams) ([]byte, error) {
 		return nil, err
 	}
 
+	// fmt.Println(string(body))
+
 	return body, nil
 }
 
 type ResponseAuth struct {
-	Token struct {
-		Access string `json:"access"`
-	} `json:"token"`
+	Token         ResponseAuthToken `json:"token"`
+	ResultSuccess int               `json:"resultSuccess"`
 }
-
+type ResponseAuthToken struct {
+	Access  string `json:"access"`
+	Id      string `json:"id"`
+	Refresh string `json:"refresh"`
+}
 type ResponseTimeTable struct {
 	TimeTable []ComponentTimeTableStruct `json:"timetable"`
 }
