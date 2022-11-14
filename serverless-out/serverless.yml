@@ -8,6 +8,7 @@ provider:
   stage: dev
   region: ap-southeast-3
   profile: arif
+  memorySize: 128
 
 # you can define service wide environment variables here
   environment:
